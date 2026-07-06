@@ -1,0 +1,318 @@
+{
+  "name": "Abandoned Cart Recovery Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0c451d03-3281-40ef-84ae-3c08e28d448b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "abandoned_carts",
+          "mode": "list",
+          "cachedResultName": "abandoned_carts"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        220,
+        0
+      ],
+      "id": "63516af8-f41a-444b-b281-23994b1aad01",
+      "name": "Select rows from a table",
+      "credentials": {
+        "postgres": {
+          "id": "gcdNICvntADN0ctO",
+          "name": "Postgres account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "10715384-da78-45ed-b54b-80e3a900fb37",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ABANDONED",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "d5828323-d216-4ae1-bacd-de76d4b8172a",
+      "name": "Check Cart Status"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        740,
+        -20
+      ],
+      "id": "1ddff7d9-5690-42c2-904b-9234d4cf832a",
+      "name": "Wait 1 Hour",
+      "webhookId": "3f435d55-b111-42a3-8165-14bea7d54849"
+    },
+    {
+      "parameters": {
+        "fromEmail": "iimezo.zidan@gmail.com",
+        "toEmail": "={{ $json.email }}",
+        "subject": "🛒 You left something in your cart",
+        "html": "=<h2>Hi {{ $json.customer_name }},</h2>\n\n<p>You recently left <b>{{ $json.product_name }}</b> in your shopping cart.</p>\n\n<p>Total Cart Value: <b>${{ $json.cart_value }}</b></p>\n\n<p>Complete your order before it's gone!</p>\n\n<p>Thank you for shopping with us.</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        980,
+        -20
+      ],
+      "id": "8bfa8840-cfd7-4ad6-920c-065d63e939a7",
+      "name": "Send email",
+      "webhookId": "ac855b60-dcbb-4a56-b1d6-be02f5279e71",
+      "credentials": {
+        "smtp": {
+          "id": "7pi46DxFclgsYGGs",
+          "name": "SMTP account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "abandoned_carts",
+          "mode": "list",
+          "cachedResultName": "abandoned_carts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cart_value": "={{ $('Select rows from a table').item.json.cart_value }}",
+            "id": "={{ $('Select rows from a table').item.json.id }}",
+            "customer_name": "={{ $('Select rows from a table').item.json.customer_name }}",
+            "email": "={{ $('Select rows from a table').item.json.email }}",
+            "product_name": "={{ $('Select rows from a table').item.json.product_name }}",
+            "created_at": "={{ $('Select rows from a table').item.json.created_at }}",
+            "status": "REMINDER_SENT"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cart_value",
+              "displayName": "cart_value",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1240,
+        -20
+      ],
+      "id": "ae0fcda7-dbff-471c-9837-f13c006d9bd4",
+      "name": "Update Cart Status",
+      "credentials": {
+        "postgres": {
+          "id": "gcdNICvntADN0ctO",
+          "name": "Postgres account 5"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Select rows from a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select rows from a table": {
+      "main": [
+        [
+          {
+            "node": "Check Cart Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Cart Status": {
+      "main": [
+        [
+          {
+            "node": "Wait 1 Hour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1 Hour": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "Update Cart Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "152862c7-b917-4d97-bff3-3ebf36c6de76",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0d597bc4579aba1bf0928fff3ab18156d8247baa406ed8ad554e19f84e0a86ed"
+  },
+  "id": "1aDCCMhBOktQ4njW",
+  "tags": []
+}
